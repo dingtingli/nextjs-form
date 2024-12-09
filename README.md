@@ -40,3 +40,29 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 ```bash
 npx create-next-app@latest
 ```
+
+2. install shadcn ui
+
+```bash
+npx shadcn@latest init
+```
+
+3. install shadcn form
+
+```bash
+npx shadcn@latest add form
+
+? How would you like to proceed? » - Use arrow-keys. Return to submit.
+>   Use --force
+```
+
+"react": "^19.0.0",
+"react-dom": "^19.0.0",
+"react-hook-form": "^7.54.0",
+"zod": "^3.23.8",
+
+4. install shadcn input
+
+```bash
+npx shadcn@latest add input
+```
