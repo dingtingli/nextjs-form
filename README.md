@@ -69,3 +69,11 @@ npx shadcn@latest add input
 
 
 form01 前端验证
+
+form02 服务器段验证
+
+ctrl+ shift+ p 快捷键 JavaScript 设置前端的JavaScript disabled/enabled
+
+form01 在前端js disabled 时，无法实现验证；form02 在前端js disabled 时，接收不到数据。
+
+form03 浏览器设置成 JavaScript disabled 后如何实现验证
