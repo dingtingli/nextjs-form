@@ -16,9 +16,17 @@ export async function onSubmitAction(
     const parsed = schema.safeParse(formData);
 
     //test 
-    console.log(parsed);
+    //console.log(parsed);
 
     if (!parsed.success) {
+        console.log(JSON.stringify({
+            success: false,
+            error: {
+              issues: parsed.error.issues,
+              errors: parsed.error.errors,
+            }
+          }, null, 2));
+
         const fields: Record<string, string> = {};
 
         for (const key of Object.keys(formData)) {
@@ -38,6 +46,8 @@ export async function onSubmitAction(
             fields: fields,
             issues: fieldsErrors
         };
+    } else {
+        console.log(parsed); // This will log the successful result as before
     }
 
     if (parsed.data.email.includes("a")) {
