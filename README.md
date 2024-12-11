@@ -386,3 +386,46 @@ onSubmit={form.handleSubmit(() => formRef.current?.submit())}
 
 ## form03 验证升级
 
+上面的操作完成了之前的想要实现的功能，但是出现了一个新的问题，服务器返回验证信息后，把表单中的所有内容都清空了。
+
+这是因为表单提交后，页面进行了刷新，表单内容都赋值成了初始值。
+
+我们需要从服务器端将送去服务器端验证的表单内容返回，并重新赋值。
+
+有了上面的经验，可以把返回值加到 FormState 中。
+
+```tsx
+export type FormState = {
+    message: string;
+    fields?: Record<string, string>;
+}
+```
+
+在 `onSubmitAction` 函数中，如果 `schema.safeParse(formData);` 解析不成功，就需要手动将表单的值填入 fields 中。
+
+```tsx
+const fields: Record<string, string> = {};
+for(const key of Object.keys(formData)){
+    fields[key] = formData[key].toString();
+}
+```
+
+如如果 `schema.safeParse(formData);` 解析成功，`parsed.data` 就是所需要的表单数据。
+
+最后，我们在 from 的定义中，将 state.fields 加入 defaultValues 中。
+
+```tsx
+const form = useForm<formSchema>({
+    resolver: zodResolver(schema),
+    defaultValues: {
+        first: "",
+        last: "",
+        email: "",
+        ...(state?.fields ?? {}),
+    },
+});
+```
+
+## form 03 验证升级 2
+
+现在服务端
