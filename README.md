@@ -285,3 +285,104 @@ async function onSubmit(data: formSchema) {
 
 ## form03 表单验证
 
+想要在JavaScript disable 的情况下发送form请求到服务端，并且能够接收到响应，并显示的页面上，我们需要一点点小技巧。
+
+### HTML form 元素中的 action 和 onsubmit 属性有不同的用途和功能：
+
+1. action 属性：
+
+- 定义了表单数据提交的目标 URL。
+- 指定了处理表单提交的服务器脚本的位置。
+- 当表单提交时，浏览器会将表单数据发送到这个 URL。
+- 例子：<form action="/submit-form" method="post">
+
+2. onsubmit 属性：
+
+- 定义了表单提交时要执行的 JavaScript 函数。
+- 通常用于在表单提交前进行客户端验证。
+- 如果 onsubmit 函数返回 false，表单提交会被取消。
+- 例子：<form onsubmit="return validateForm()">
+
+
+看来解决第一个问题，我们需要使用 form 中的 action 属性，那么 action 中调用的函数是什么呢？
+
+看上去我们在服务器中`onSubmitAction`就很合适？我们还需要处理一下这个函数。
+
+### useActionState 函数
+
+```javascript
+const [state, formAction] = useActionState(onSubmitAction, { message: "" });
+```
+
+这行代码使用了 React 的 `useActionState` hook（在某些版本中也称为 `useFormState`）。让我们逐部分解释：
+
+1. `useActionState` 函数：
+   - 这是一个 React hook，用于处理表单状态和服务器操作。
+   - 它通常用于 Next.js 13+ 等支持服务器组件和服务器操作的框架中。
+
+2. 参数：
+   - 第一个参数 `onSubmitAction`：这是一个函数，代表要执行的服务器操作。当表单提交时，这个函数会被调用。
+   - 第二个参数 `{ message: "" }`：这是初始状态对象。在这个例子中，初始状态有一个 `message` 属性，初始值为空字符串。
+
+3. 返回值：
+   - `state`：这是一个对象，包含当前的表单状态。初始时它会是 `{ message: "" }`，但可能会随着表单交互而更新。
+   - `formAction`：这是一个函数，你可以将它传递给表单的 `action` 属性。它包装了原始的 `onSubmitAction`，并处理了状态更新。
+
+
+使用场景：
+
+1. 状态管理：
+   - 你可以使用 `state` 来访问表单的当前状态，比如 `state.message`。
+   - 这个状态会在表单提交后自动更新，反映服务器操作的结果。
+
+2. 表单操作：
+   - `formAction` 可以直接用作表单的 `action` 属性：`<form action={formAction}>`。
+   - 这样设置后，表单提交会自动触发 `onSubmitAction`，并处理状态更新。
+
+3. 服务器交互：
+   - `onSubmitAction` 函数通常是一个异步函数，处理服务器端的逻辑（如数据库操作）。
+   - 操作完成后，它可以返回新的状态，这个状态会自动更新到 `state` 中。
+
+总的来说，这行代码设置了一个受控的表单状态管理系统，集成了客户端状态和服务器端操作，使得处理表单提交和更新变得更加简单和高效。
+
+有了 `useActionState` 这个hook，我们不仅可以使用 form 中的 action 属性，还可以将服务器端的反馈，封装到 state 中。
+
+### useRef 函数
+
+处理完了 `action` 属性，我们需要继续处理 `onsubmit` 属性。
+
+useRef 是 React 提供的一个 Hook，用来在函数式组件中获取并保存某个可变的数据引用（ref）。在这个场景下，它最大的作用是让你可以访问真实的 DOM 元素。
+
+通常在 React 中，我们通过 JSX 来描述界面，React 会为我们维护虚拟 DOM 和真实的 DOM 之间的对应关系。大多数情况下，你不需要直接接触真实的 DOM 元素。但是有一些特殊场景下，你需要对 DOM 元素进行直接的操作，这时就可以使用 useRef 来拿到这个元素的引用。
+
+```tsx
+const formRef = useRef<HTMLFormElement>(null);
+
+return (
+  <form ref={formRef}>
+    {/* form fields */}
+  </form>
+);
+```
+
+当表单渲染到页面上之后，你就可以通过 formRef.current 来访问这个表单 DOM 节点。例如执行 formRef.current.submit() 来手动触发表单提交。
+
+onsubmit 在 javascript 被禁止时是不可用的，我们希望在 javascript 可用时，浏览器会按照 <form> 标签上的 action 属性，将表单数据以相应的方式发送到服务器端。此时调用 `formRef.current.submit()` 即 form 表单原生的 submit 方法就可以触发浏览器的原生提交流程，这将会使用 action 属性指定的函数。
+
+最终的代码：
+
+```tsx
+onSubmit={form.handleSubmit(() => formRef.current?.submit())}
+```
+
+首先触发 zod 中定义的字段验证，然后触发触发浏览器的原生提交流程，使用 action 属性指定的函数。
+
+此时我们的 state.message 将会接受来自服务器端的消息，现在将其将其显示在页面上。
+
+```tsx
+{state?.message !== "" && 
+     (<div className="text-red-500">{state.message}</div>)}
+```
+
+## form03 验证升级
+
