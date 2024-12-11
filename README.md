@@ -242,3 +242,46 @@ function onSubmit(data: formSchema) {
         </FormItem>
     )}
 ```
+
+
+
+## form02 表单验证
+
+在 form01 的基础之上，这次支持服务器端的验证。
+
+首先，我们定义服务器端执行的代码 formServerSubmit.ts，并将其添加到 form02 目录下。
+
+```tsx
+export type FormState = {
+    message: string;
+};
+
+export async function onSubmitAction(data: FormData): Promise<FormState> {
+    ...
+```    
+
+onSubmitAction 函数接收一个 FormData 对象，并返回一个 Promise 对象，其中包含了表单的服务器验证结果。
+
+前端首先需要将接收到的表单类型转换为 FormData 对象，然后调用 onSubmitAction 函数。
+
+```tsx
+async function onSubmit(data: formSchema) {
+    const formData = new FormData();
+    formData.append("first", data.first);
+    formData.append("last", data.last);
+    formData.append("email", data.email);
+
+    console.log(await onSubmitAction(formData));
+}
+```
+
+最终，服务器端的验证结果将会返回前端的控制台中。
+
+```json
+{message: 'Email address is not valid'}
+```
+
+只是将检验结果输出到控制台，肯定不是我们想要的结果。
+
+## form03 表单验证
+
