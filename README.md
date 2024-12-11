@@ -428,4 +428,40 @@ const form = useForm<formSchema>({
 
 ## form 03 验证升级 2
 
-现在服务端
+现在服务端返回的验证信息都是我们手写到  `FormState` 的 `message` 字段中的，有些验证信息我们当时时定义到 Zod 对象中的，现在只不过是当浏览器 JavaScript 被禁止之后，绕开了前端的验证。
+
+此时我们服务器端是否可以将原始的验证信息直接返回呢。
+
+当然是可以的。按照上面的方法，把这些信息也封装到 FormState 中。
+
+```tsx
+export type FormState = {
+    message: string;
+    fields?: Record<string, string>;
+    issues?: Record<string, string>;
+}
+```
+
+在 `onSubmitAction` 函数中，如果 `schema.safeParse(formData);` 解析不成功，将原先 Zod 对象定义的验证信息加入到 issues 中。
+
+```tsx
+issues: parsed.error.issues.map((issue) => issue.message),
+```
+
+form 组件中，我们将 `state?.issues` 也一并显示到表单的最上面。
+
+```tsx
+{state?.issues && (
+    <div className="text-red-500">
+        <ul>{state.issues.map((issue) => (
+               <li key={issue} className="flex gap-1">
+                   <X fill="red" />
+                       {issue}
+                </li>))}
+        </ul>
+    </div>
+)}
+
+```
+
+## form 04
