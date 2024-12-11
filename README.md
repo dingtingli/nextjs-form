@@ -1,14 +1,4 @@
 
-form01 前端验证
-
-form02 服务器段验证
-
-ctrl+ shift+ p 快捷键 JavaScript 设置前端的JavaScript disabled/enabled
-
-form01 在前端js disabled 时，无法实现验证；form02 在前端js disabled 时，接收不到数据。
-
-form03 浏览器设置成 JavaScript disabled 后如何实现验证
-
 #  Form 表单测试项目
 
 本项目旨在演示如何在实际开发中集成并使用 shadcn/ui 提供的表单组件。
@@ -22,6 +12,9 @@ form03 浏览器设置成 JavaScript disabled 后如何实现验证
 Zod 官网地址：https://zod.dev/
 
 Reack hook form 官网地址：https://www.react-hook-form.com/get-started/#Quickstart
+
+这个项目主要是学习了这位博主的视频教程：
+https://www.youtube.com/watch?v=VLk45JBe8L8
 
 ## 安装依赖
 
@@ -410,7 +403,7 @@ for(const key of Object.keys(formData)){
 }
 ```
 
-如如果 `schema.safeParse(formData);` 解析成功，`parsed.data` 就是所需要的表单数据。
+如果 `schema.safeParse(formData);` 解析成功，`parsed.data` 就是所需要的表单数据。
 
 最后，我们在 from 的定义中，将 state.fields 加入 defaultValues 中。
 
@@ -464,4 +457,119 @@ form 组件中，我们将 `state?.issues` 也一并显示到表单的最上面�
 
 ```
 
-## form 04
+## form 04 表单验证
+
+form 03 已经做得很好了，唯一的遗憾是，所有的服务器端验证错误都是在表单上方显示的，这并不是我们想要的。
+
+能不能做到，将验证错误显示在表单每个输入框的下面，就像前端显示的那样。
+
+这是可以的，但我们需要对之前的验证做一些修改。
+
+首先是服务器端，需要将 issues 的格式设置成更接近于 zod parsed.error.issues的格式。
+
+```tsx
+export type FormState = {
+    message: string;
+    fields?: Record<string, string>;
+    issues?: Record<string, string>;
+};
+```
+
+然后重新赋值：
+
+```tsx
+// 将 zod 返回的错误信息（parsed.error.issues）重新组织{fieldName: message} 的结构
+const fieldsErrors: Record<string, string> = {};
+parsed.error.issues.forEach((issue) => {
+    if (issue.path.length > 0) {
+        fieldsErrors[issue.path[0]] = issue.message;
+    }
+})
+return {
+    message: "parsed.error.message",
+    fields: fields,
+    issues: fieldsErrors
+};
+```
+
+如果 `schema.safeParse(formData);` 解析成功，我们需要手动设置 issues 的值。
+
+```tsx
+return {
+    message: "Email address is not valid a from server message",
+    fields: parsed.data,
+    issues: { email: "Email address is not valid a from serveissue" }
+};
+```
+
+服务器端完成后，现在开始在客户端显示错误信息。
+
+### useEffect hook
+
+useEffect 是 React 中最常用和最强大的 Hook 之一。它允许你在函数组件中执行副作用操作。副作用可以是数据获取、订阅、手动修改 DOM 等任何可能影响到组件外部的操作。
+
+
+以下是 useEffect 的基本用法和一些重要概念：
+
+
+基本语法：
+
+```jsx
+
+useEffect(() => {
+  // 副作用代码
+  return () => {
+    // 清理函数（可选）
+  };
+}, [dependencies]);
+```
+
+- 执行时机：useEffect 在每次渲染后执行。首次渲染后会执行一次，之后在依赖项变化时再次执行。
+
+- 依赖数组：第二个参数是一个可选的依赖数组。如果提供了依赖数组，effect 只会在依赖项变化时重新执行。空数组 [] 表示 effect 只在组件挂载和卸载时执行。如果不提供依赖数组，effect 会在每次渲染后执行。
+
+前端代码中添加 useEffect，如果 state?.issues 或 form 中的任何一个发生变化，就重新执行 effect。
+
+```tsx
+useEffect(() => {
+    if (state?.issues) {
+        Object.entries(state.issues).forEach(([field, message]) => {
+            form.setError(field as keyof formSchema, { message });
+        });
+    }
+}, [state?.issues, form]);
+```
+
+但这会引起一个错误，由于 `useEffect` 的依赖项引起的无限循环更新导致的。也就是说，在 `useEffect` 中调用 `form.setError` 后会引起组件的 `state` 或 `props` 改变，从而再次触发 `useEffect`，形成死循环。
+
+如何解决这个问题？这里需要介绍一下 `useRef` 的一个特殊功能。
+
+`useRef` 通常用于获取 DOM 元素的引用。但这只是 `useRef` `的一个常见用途。useRef` 实际上可以用来存储任何可变值，这个值在组件的整个生命周期内保持不变。
+
+在函数组件中，每次渲染都会重新执行整个函数体。普通变量会在每次渲染时重新初始化，而 `useRef` 创建的引用在组件的整个生命周期中保持不变。
+
+使用 `useRef` 记录组件生命周期中state.issues 的每次变化，从而避免了无限循环的问题：
+
+```tsx
+const prevIssuesRef = useRef<Record<string, string> | undefined(undefined);
+useEffect(() => {
+    if (state?.issues && state.issues !== prevIssuesRef.current) {
+        Object.entries(state.issues).forEach(([field, message]) => {
+            form.setError(field as keyof formSchema, { message });
+        });
+    }
+    prevIssuesRef.current = state.issues;
+}, [state?.issues, form]);
+```
+
+最后，我们需要将服务器端获取的验证信息显示在表单正确的位置。
+
+之前的验证信息默认显示在 `<FormMessage >`标签中，这次我们可以手写 `FormMessage` 标签。
+
+```tsx
+<FormMessage >
+    {state?.issues?.first && <spanissues.first}</span>}
+</FormMessage>
+```
+
+OK! 所有问题都解决了！
