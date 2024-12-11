@@ -1,72 +1,3 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
-
-## Getting Started
-
-First, run the development server:
-
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-
-1. install the project
-
-```bash
-npx create-next-app@latest
-```
-
-2. install shadcn ui
-
-```bash
-npx shadcn@latest init
-```
-
-3. install shadcn form
-
-```bash
-npx shadcn@latest add form
-
-? How would you like to proceed? » - Use arrow-keys. Return to submit.
->   Use --force
-```
-
-"react": "^19.0.0",
-"react-dom": "^19.0.0",
-"react-hook-form": "^7.54.0",
-"zod": "^3.23.8",
-
-4. install shadcn input
-
-```bash
-npx shadcn@latest add input
-```
-
 
 form01 前端验证
 
@@ -139,9 +70,7 @@ npx shadcn@latest add input
 在表单中，我们将使用 React Hook Form 作为表单状态管理工具，并使用 Zod 作为表单数据的类型校验方案，实现前端验证。
 
 
-### form01 表单验证
-
-1. 在 form01 目录下创建 formSchema.ts 文件，并将其内容如下所示：
+1. 定义表单数据的类型以及验证规则，在 form01 目录下创建 formSchema.ts 文件，使用 Zod 定义表单数据的类型，其内容如下所示：
 
 ```ts
 import { z } from "zod";
@@ -160,7 +89,7 @@ export const schema = z.object({
  - `.trim()`: 在验证之前会去除字符串两端的空白字符。
  - `.min(1, { ... })`: 指定字符串的最小长度为1（即不能为空），如果为空则显示指定的错误消息。
 
- 如果需要regular expression 验证，可以使用 `.regex()` 方法。
+ 如果需要 regular expression 正则表达式验证，可以使用 `.regex()` 方法。
 
  详情可以参考 Zod 官网：https://zod.dev/
 
@@ -180,7 +109,136 @@ if (result.success) {
 }
 ```
 
-如果数据有错误，则会返回错误信息，并且可以通过 result.error.errors 获取错误信息。
+如果数据有错误，会返回错误信息，并且可以通过 result.error.errors 获取错误信息。
 
-2. 在 form01 目录下创建 form01.tsx 文件，表单的主要内容都在这个文件中。
+2. 将定义好的表单数据作用到表单上。
 
+在 form01 目录下创建 form01.tsx 文件，表单的主要内容都在这个文件中。
+
+我们将使用 React Hook Form 作为表单状态管理工具，结合 Zod 定义的表单数据的类型校验方案，实现前端验证。
+
+首先，需要声明一个组件是客户端组件（Client Component）。
+
+```tsx
+"use client";
+```
+
+读取 Zod 定义的表单数据的类型，便于在表单中使用。
+
+```tsx
+type formSchema = z.output<typeof schema>;
+```
+
+useForm Hook：
+
+```ts
+const form = useForm<formSchema>({
+    resolver: zodResolver(schema),
+    defaultValues: {
+        first: "",
+        last: "",
+        email: "",
+    },
+});
+```
+
+1. `const form = useForm<formSchema>({ ... })`
+
+- `useForm` 是 React Hook Form 的核心 hook，用于创建和管理表单状态。
+- `<formSchema>` 是一个泛型参数，它指定了表单数据的类型。这确保了类型安全，使得 TypeScript 可以在编译时捕获潜在的类型错误。
+
+2. `resolver: zodResolver(schema)`
+
+- `resolver` 是 `useForm` 的一个选项，用于指定表单验证的方法。
+- `zodResolver` 是一个适配器，它允许使用 Zod 库来定义和执行表单验证规则。
+- `schema` 是一个 Zod `schema` 对象，定义了表单字段的验证规则（例如，必填字段、电子邮件格式等）。
+
+除了 Zod 之外，我们在这里也可以选择其他的验证方法，例如 Yup 或 Joi。
+
+3. `defaultValues: { first: "", last: "", email: "", }`
+
+- `defaultValues` 选项用于设置表单字段的初始值。
+- 这里为 `first`、`last` 和 `email` 字段都设置了空字符串作为默认值。
+
+`useForm` 返回一个对象（这里命名为 form），包含了多个用于管理表单状态和行为的方法和属性。
+包括 `register`（用于注册表单字段）、`handleSubmit`（处理表单提交）、`formState`（包含表单状态信息）等。
+
+3. 将准备好的 form 添加到 Form 组件中去。
+
+```tsx
+<Form {...form}>
+    <form className="space-y-8" onSubmit={form.handleSubmit(onSubmit)}>
+        <FormField
+            control={form.control}
+            name="first"
+            render={({ field }) => (
+                <FormItem className="w-full">
+                    <FormLabel>First Name</FormLabel>
+                    <FormControl>
+                        <Input {...field} placeholder="First Name" />
+                    </FormControl>
+                    <FormDescription>Your First Name</FormDescription>
+                    <FormMessage />
+                </FormItem>
+            )}
+        />
+        ...
+```
+
+`<Form {...form}>`的内容：
+
+
+`form` 对象是 `useForm` hook 返回的，包含了许多有用的方法和属性，例如：
+register: 用于注册表单字段；handleSubmit: 处理表单提交；formState: 包含表单状态信息（如错误、是否dirty等）；control: 用于控制表单字段（尤其是在使用受控组件时）。
+
+通过 `{...form}`，这些属性和方法被传递给 `<Form>` 组件，使其能够访问和使用 React Hook Form 的功能。
+
+
+`onSubmit={form.handleSubmit(onSubmit)}`
+
+使用 `form.handleSubmit(onSubmit)` 作为表单的 `onSubmit` 处理器，您可以利用 React Hook Form 的全部功能，同时保持对表单提交过程的完全控制。
+
+`form.handleSubmit`这是 React Hook Form 提供的一个方法。它的主要作用是在表单提交时执行一系列预定义的操作:
+a. 阻止表单的默认提交行为。
+b. 触发所有注册字段的验证。
+c. 如果所有验证通过：收集所有表单数据。调用您的 `onSubmit` 函数，并将收集到的数据作为参数传入。 
+d. 如果验证失败：更新表单状态以显示错误。不调用 `onSubmit` 函数。
+
+```ts
+function onSubmit(data: formSchema) {
+    console.log(data);
+}
+```
+这段自定义的`onSubmit` 函数，就将收集到的表单数据作为参数 data 传入。 
+
+```tsx
+<FormField
+    control={form.control}
+    name="first"
+    render={({ field }) => (
+        ...
+```
+
+`<FormField>` 组件是一个自定义组件，用于封装表单字段的逻辑。`control` 对象包含了整个表单所有字段的状态和方法，提供了访问和管理表单状态的能力。
+
+`name` 属性指定了表单字段的名称，它与 Zod schema 中定义的字段名称一致。`name` 属性直接影响 `render` 函数中 `field` 对象的内容。 
+
+`render` 属性接收一个对象 `field`，它包含了表单字段的各种状态和方法。如：value: 字段当前值；onChange: 更新字段值的函数；onBlur: 处理失焦事件的函数。
+
+在 `render` 函数中，我们使用 `field` 对象来渲染表单字段的内容。
+
+```tsx
+<FormField
+    control={form.control}
+    name="first"
+    render={({ field }) => (
+        <FormItem className="w-full">
+            <FormLabel>First Name</FormLabel>
+            <FormControl>
+                <Input {...field} placeholder="First Name" />
+            </FormControl>
+            <FormDescription>Your First Name</FormDescription>
+            <FormMessage />
+        </FormItem>
+    )}
+```
