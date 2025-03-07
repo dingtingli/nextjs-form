@@ -49,11 +49,13 @@ npx shadcn@latest add form
 ```bash
 npm install react-hook-form
 npm install zod 
+npm install @hookform/resolvers
 ```
 
 此时，`package.json` 中将包含：
 
 ```json
+"@hookform/resolvers": "^4.1.3",
 "react": "^19.0.0",
 "react-dom": "^19.0.0",
 "react-hook-form": "^7.54.0",
