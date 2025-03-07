@@ -46,6 +46,11 @@ npx shadcn@latest init
 npx shadcn@latest add form
 ```
 
+```bash
+npm install react-hook-form
+npm install zod 
+```
+
 此时，`package.json` 中将包含：
 
 ```json
